@@ -1,0 +1,199 @@
+================================================================================
+GURGURE Web-to-Print, Branding, Design and Production Platform
+PHASE I - BUILD REPORT
+================================================================================
+Date: 2026-09-08
+Project: D:\my projects\gurgure  (frontend: React/Vite/Tailwind, backend: Laravel)
+
+--------------------------------------------------------------------------------
+1. BACKEND WORK COMPLETED
+--------------------------------------------------------------------------------
+
+1.1 Database schema (migrations, all ran successfully)
+  - 2026_09_08_000010_create_print_products_table
+        print_products: slug, name, category, short_description, description,
+        image, price_mode (instant/estimated/quote), base_price, setup_cost,
+        min_quantity, unit_label, turnaround, is_published, order, translations
+  - 2026_09_08_000011_create_print_option_groups_table
+        print_option_groups: product_id(FK), name, type (radio/select/checkbox),
+        required, order, translations
+  - 2026_09_08_000012_create_print_options_table
+        print_options: group_id(FK), name, description, price, price_type
+        (none/per_unit/one_time), is_default, order, translations
+  - 2026_09_08_000013_create_print_price_rules_table
+        print_price_rules: product_id(FK), min_qty, max_qty, unit_price
+  - 2026_09_08_000014_create_print_orders_table
+        print_orders: order_no (unique), customer_id(FK nullable), name, email,
+        phone, address, items (JSON snapshot), subtotal, total, status, notes
+
+1.2 Models (with multilingual support)
+  - PrintProduct  -> optionGroups, priceRules relationships; toPublicArray($lang)
+  - PrintOptionGroup -> options relationship; toPublicArray($lang)
+  - PrintOption   -> toPublicArray($lang)
+  - PrintPriceRule
+  - PrintOrder    -> items cast to array; belongsTo Customer
+
+1.3 Pricing engine
+  - app/Services/PrintPricingService.php
+    calculate(product, qty, selections):
+      * validates required groups + single-select (radio/select)
+      * validates option ids belong to the group
+      * resolves unit price from quantity matrix (falls back to base_price)
+      * sums printing (qty x unit) + per_unit options + one_time add-ons + setup
+      * returns breakdown: mode, unit_price, effective_per_unit, line_items,
+        total (AFN), estimate_low/estimate_high (±10% for 'estimated' mode)
+
+1.4 Public API (routes/api.php)
+  - GET    /api/print-products                -> list + grouped categories (localized)
+  - GET    /api/print-products/{slug}         -> product detail (localized)
+  - POST   /api/print-products/{slug}/price   -> price breakdown (server recomputes)
+  - POST   /api/print/orders                  -> place order (guest friendly,
+        matches customer by token or email; snapshots line items + totals)
+
+1.5 Admin API (protected by auth:sanctum + admin gate)
+  - apiResource /admin/print-products         -> full CRUD incl. nested save of
+        price_rules (replace wholesale), option_groups, options, translations
+  - GET/PUT/DELETE /admin/print-orders        -> list (search/status/page),
+        status update, delete
+  - Order statuses: pending, processing, in_production, quality_check,
+        delivered, cancelled
+
+1.6 Seeder (RUN - verified)
+  - database/seeders/PrintProductsSeeder.php
+    8 Phase I products seeded:
+      1. Business Cards         (instant)  Business Stationery
+      2. Flyers A5              (instant)  Marketing
+      3. Roll-up Banner         (instant)  Large Format
+      4. Custom T-Shirts        (instant)  Apparel
+      5. Promotional Pens       (instant)  Promotional
+      6. Certificates           (instant)  Paper
+      7. Acrylic Office Sign    (estimated) Signage
+      8. Exhibition Booth       (quote)    Exhibition Events
+    Totals: 8 products, 23 option groups, 78 options, 35 price brackets
+
+--------------------------------------------------------------------------------
+2. BUGS FOUND & FIXED (backend)
+--------------------------------------------------------------------------------
+1. Foreign key mismatch in print tables:
+   Migrations used 'product_id' / 'group_id' columns but Eloquent inferred
+   'print_product_id' / 'print_option_group_id'.
+   -> Added explicit foreign keys in all relationships:
+      PrintProduct::optionGroups('product_id'), priceRules('product_id')
+      PrintOptionGroup::product('product_id'), options('group_id')
+      PrintOption::group('group_id')
+      PrintPriceRule::product('product_id')
+
+2. "Call to undefined method PrintOption::localizeField()"
+   PrintOptionGroup::toPublicArray() called $o->localizeField() which does not
+   exist on PrintOption.
+   -> Now uses $o->toPublicArray($lang).
+
+3. Quantity bracket boundary bug:
+   priceRules() relationship had a default ORDER BY min_qty ASC which overrode
+   ->orderByDesc('min_qty'), causing qty=500 to match the 250-500 bracket (2.8)
+   instead of 500-1000 (2.4).
+   -> resolveUnitPrice now uses
+      $product->priceRules()->get()->sortByDesc('min_qty')
+   Verified: qty 500 -> 2.4, qty 499 -> 2.8.
+
+4. order_no NOT NULL but assigned AFTER insert -> SQL error 1364.
+   -> order_no is now generated BEFORE save:
+      'GR-' . date('ymd') . '-' . str_pad(nextId, 4, '0')
+   Verified: order GR-260908-0001 created (201 response).
+
+--------------------------------------------------------------------------------
+3. FRONTEND WORK COMPLETED
+--------------------------------------------------------------------------------
+
+3.1 Types (src/types/index.ts)
+  Added: PrintProduct, PrintOptionGroup, PrintOption, PrintPriceRule,
+  PrintPriceBreakdown, PrintLineItem, PrintCartItem, PrintOrderItem, PrintOrder,
+  PrintPriceMode, PrintOptionPriceType, PrintGroupType.
+
+3.2 API (src/api/index.ts)
+  Public:
+    getPrintProducts(), getPrintProduct(slug),
+    calculatePrintPrice(slug, qty, selections), submitPrintOrder(data)
+  Admin:
+    adminPrintProducts = { getAll, getOne, create, update, delete }
+    adminPrintOrders   = { getAll, getMeta, getOne, updateStatus, delete }
+
+3.3 Public pages (new)
+  - src/pages/public/PrintShop.tsx        -> route /print
+      Catalogue with category filter chips, price-mode badges
+      (Instant Price / Estimate / Request Quote), starting price, How It Works.
+  - src/pages/public/PrintConfigurator.tsx -> route /print/:slug
+      Quantity stepper, option groups (radio/checkbox with default preselect),
+      LIVE price panel via /price API (debounced 250ms):
+      - instant  -> single total
+      - estimated-> ±10% range banner
+      - quote    -> guide price + "request a quote" note
+      Add to Cart -> localStorage 'print_cart'
+  - src/pages/public/PrintCart.tsx        -> route /print/cart
+      Cart list (qty +/- , remove), contact form (name/email/phone/address/
+      notes), Place Order -> POST /api/print/orders -> success screen with order no.
+
+3.4 Admin pages (new)
+  - src/pages/admin/AdminPrintProducts.tsx -> route /admin/print-products
+      Nested editor: base fields (slug, name, category, price_mode, base_price,
+      setup_cost, min_quantity, unit_label, turnaround, image upload, publish,
+      order), Quantity price matrix editor, Option groups editor (radio/select/
+      checkbox, required, reorder, delete), per-option price + price_type
+      (none/per_unit/one_time) + default flag, Dari/Pashto translation fields.
+  - src/pages/admin/AdminPrintOrders.tsx -> route /admin/print-orders
+      Search by order#/name/email, status filter, pagination, detail modal with
+      customer info, items snapshot, status pipeline buttons, delete.
+      Statuses: pending, processing, in_production, quality_check, delivered,
+      cancelled.
+
+3.5 Routes & navigation
+  - src/App.tsx: added routes
+      /print, /print/cart, /print/:slug
+      /admin/print-products, /admin/print-orders
+  - src/utils/navigation.ts: added "Print" dropdown (Print Shop, My Cart) to
+      STATIC_NAV and "Print Shop" link to FOOTER_LINKS.
+  - src/layouts/AdminLayout.tsx: added sidebar links
+      Print Products, Print Orders (with icons).
+
+3.6 i18n (trilingual: English default, Dari (fa), Pashto (ps))
+  - src/i18n/dicts/admin.ts: added 'Print Products', 'Print Orders'.
+  - src/i18n/dicts/core.ts: added ~60 print-shop keys in fa and ps
+      (Print Shop, My Cart, Instant Price, Estimate, Configure, Add to Cart,
+      Quantity, Your Price, Estimated range, Place Order, Order Submitted, etc.)
+  - TypeScript checked OK (tsc --noEmit).
+
+--------------------------------------------------------------------------------
+4. VERIFICATION DONE
+--------------------------------------------------------------------------------
+  Run: php artisan db:seed --class=PrintProductsSeeder
+  Verified via curl / Invoke-RestMethod:
+  - GET  /api/print-products        -> 8 products, 8 categories
+  - GET  /api/print-products/business-cards -> 4 option groups
+  - POST /api/print-products/business-cards/price
+        {qty:500, selections:{1:[1],2:[5],3:[14],4:[15,19]}}
+        -> total 2925, unit_price 2.4 (boundary fix confirmed)
+  - POST /api/print-products/acrylic-office-sign/price -> estimated,
+        total 4500, low 4050, high 4950
+  - POST /api/print-products/event-exhibition-booth/price -> quote mode
+  - POST /api/print/orders -> order_no GR-260908-0001, 201, status pending
+  - Admin: login as sadat@gmail.com, list 8 products,
+        create nested test product (groups/rules) OK,
+        update via PUT (_method) OK,
+        update order status -> in_production OK,
+        delete test product OK, delete test order OK.
+  - Frontend: tsc --noEmit PASS; all new Vite pages transform (HTTP 200):
+        PrintShop.tsx, PrintConfigurator.tsx, PrintCart.tsx,
+        AdminPrintProducts.tsx, AdminPrintOrders.tsx
+  - PHP lint: all models, controllers, service, seeder -> no syntax errors.
+
+--------------------------------------------------------------------------------
+5. NEXT PHASES (per the full digital-ordering spec, not yet built)
+--------------------------------------------------------------------------------
+  Phase II: customer order tracking in portal, uploaded design files, payments,
+  admin income/revenue dashboards, print order mailbox.
+  Phase III: Excel/PDF quotation + invoice + GRN export, multi-branch settings,
+  full quotation lineage (payment -> invoice -> delivery note), analytics.
+
+================================================================================
+END OF PHASE I BUILD REPORT
+================================================================================

@@ -1,0 +1,135 @@
+GURGURE — Platform Concept Phase 1 Implementation Summary
+==========================================================
+Date: 2026-09-08
+Project: D:\my projects\gurgure
+
+OBJECTIVE
+---------
+Restructure the site into one ecosystem: Solutions, Services, Software, Marketplace, Ventures, My GURGURE.
+Per the concept doc's phased recommendation:
+- Phase 1 (Core Business): Solutions + Services + Software + Work + Quote/Contact + My GURGURE (implemented)
+- Phase 2 Commerce: Full marketplace (deferred - teaser page created)
+- Phase 3 Ecosystem: Full Ventures (deferred - teaser page created)
+
+BACKEND COMPLETED
+-----------------
+1. Migration: 2026_09_08_000020_create_software_products_table.php
+   - software_products table with: slug(unique), name, category(index), tagline, description, problem, solution,
+     features/screenshots json, demo_url, pricing_mode(quote|one_time|subscription, indexed), price, price_unit,
+     setup_fee, image, is_published, order, translations, timestamps
+
+2. Model: app/Models/SoftwareProduct.php
+   - Fillable, casts (arrays, floats, bool, translations)
+   - toPublicArray(string $lang) for fa/ps localization of name/tagline/description/problem/solution/category
+
+3. Seeder: database/seeders/SoftwareProductsSeeder.php (8 products)
+   - gurgure-erp (Business Systems, quote)
+   - gurgure-crm (Business Systems, subscription 500/month + 150 setup)
+   - gurgure-lms (Education Systems, quote)
+   - gurgure-sis (Education Systems, quote)
+   - gurgure-mis-meal (Institutional Systems, quote)
+   - gurgure-ecommerce (Digital Platforms, quote)
+   - gurgure-database-solutions (Database Solutions, quote)
+   - gurgure-portal (Digital Platforms, quote)
+   Registered in DatabaseSeeder
+
+4. Controllers:
+   - PublicSoftwareController: index (grouped categories + category/cat filter), show by slug
+   - AdminSoftwareProductController: full CRUD, validates, Str::slug, pricing_mode enum
+
+5. Routes (backend/routes/api.php):
+   - Public: GET /software, GET /software/{slug}
+   - Admin (auth): apiResource('software-products', AdminSoftwareProductController)
+
+6. Nav data migration: 2026_09_08_000021_update_nav_links_for_ecosystem.php
+   - DB nav_links now: Home, Solutions, Services, Software, Marketplace, Ventures, Work, Insights, About, Contact, My GURGURE
+
+7. Verified: migrate + seed = 8 products, 5 categories; admin CRUD smoke-test OK
+
+FRONTEND COMPLETED
+------------------
+1. Types (src/types/index.ts): SoftwareProduct, SoftwarePricingMode
+
+2. API (src/api/index.ts): getSoftwareProducts, getSoftwareProduct, adminSoftwareProducts CRUD
+
+3. New public pages:
+   - SoftwarePage.tsx (/software) - catalog, category filter via ?cat=, How It Works, CTA
+   - SoftwareDetail.tsx (/software/:slug) - hero, Problem/Solution, Features, Screenshots/Demo, Pricing (quote/listed), CTAs
+   - SolutionsPage.tsx (/solutions) - 7 journey cards with curated links, Ecosystem section, CTA
+   - MarketplacePage.tsx (/marketplace) - teaser page with 6 category cards, "Now building" badge
+   - VenturesPage.tsx (/ventures) - teaser page with 7-step pipeline, 3 roles, CTAs
+
+4. Routing (src/App.tsx): /solutions, /software, /software/:slug, /marketplace, /ventures, /admin/software-products
+
+5. Admin: AdminSoftwareProducts.tsx (full CRUD with 4 tabs: details, problem-solution, pricing, translations)
+
+6. Nav/Layout:
+   - AdminLayout.tsx: sidebar link "Software Products" after Print Orders
+   - utils/navigation.ts: STATIC_NAV rewritten with new ecosystem structure; FOOTER_LINKS updated
+   - Software dropdown children use /software?cat= for category filtering
+
+6. i18n (src/i18n/dicts/core.ts): Added ~100 new keys for fa/ps including nav labels, journey titles/descriptions, software/marketplace/ventures keys
+
+7. Typecheck: PASS (fixed duplicate dict keys, unused imports, icon imports)
+
+8. Vite transform: All 6 new pages return HTTP 200
+
+REMAINING / NEXT STEPS
+----------------------
+1. Verify frontend category filter works end-to-end (SoftwarePage reads ?cat=, navbar dropdown links use it) ✓ API accepts both 'category' and 'cat'
+
+2. Consider adding Services category restructure per concept (Strategy & Business | Brand & Creative | Digital & Technology | Communication | Hosting & Support) — currently kept existing categories
+
+3. Full Marketplace implementation (Phase 2): transactions, RFQs, vendor onboarding, supplier directory
+
+4. Full Ventures implementation (Phase 3): application pipeline, mentor/investor matching, program management
+
+4. Update page_hero_data / cta_data settings if needed (currently inline heroes used)
+
+5. Run full E2E test: admin login → software CRUD → public pages with lang switching → navbar dropdowns → quote/contact forms
+
+6. Optional: add missing translations for remaining keys (fallback to English currently works via t() fallback)
+
+FILES MODIFIED
+--------------
+Backend:
+- database/migrations/2026_09_08_000020_create_software_products_table.php
+- database/migrations/2026_09_08_000021_update_nav_links_for_ecosystem.php
+- app/Models/SoftwareProduct.php
+- database/seeders/SoftwareProductsSeeder.php
+- app/Http/Controllers/Api/PublicSoftwareController.php
+- app/Http/Controllers/Api/AdminSoftwareProductController.php
+- routes/api.php
+
+Frontend:
+- src/types/index.ts
+- src/api/index.ts
+- src/pages/public/SoftwarePage.tsx
+- src/pages/public/SoftwareDetail.tsx
+- src/pages/public/SolutionsPage.tsx
+- src/pages/public/MarketplacePage.tsx
+- src/pages/public/VenturesPage.tsx
+- src/pages/admin/AdminSoftwareProducts.tsx
+- src/App.tsx
+- src/layouts/AdminLayout.tsx
+- src/utils/navigation.ts
+- src/i18n/dicts/core.ts
+
+VERIFICATION COMMANDS
+---------------------
+Backend:
+  php artisan migrate --force
+  php artisan db:seed --class=SoftwareProductsSeeder
+  php -l app/Http/Controllers/Api/PublicSoftwareController.php
+
+Frontend:
+  node .\node_modules\typescript\bin\tsc --noEmit
+  # Vite pages (dev server on 5173):
+  # /software, /software/:slug, /solutions, /marketplace, /ventures, /admin/software-products
+
+API Endpoints:
+  GET /api/software (supports ?category= or ?cat=)
+  GET /api/software/{slug}
+  GET /api/software?cat=Business%20Systems
+  X-Language header: fa|ps|en
+  Admin: GET|POST|PUT|DELETE /api/admin/software-products

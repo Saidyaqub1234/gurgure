@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f8fafc;
+    color: #334155;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-weight: 700;
+  }
+  ::selection {
+    background: rgba(30, 58, 95, 0.2);
+    color: #1e3a5f;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white transition-all duration-300;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 40%, #2d8a4e 100%);
+    background-size: 200% 200%;
+    background-position: 0% 0%;
+  }
+  .btn-primary:hover {
+    background-position: 100% 100%;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(30, 58, 95, 0.25);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold transition-all duration-300;
+    border: 2px solid #1e3a5f;
+    color: #1e3a5f;
+    background: transparent;
+  }
+  .btn-secondary:hover {
+    background: #1e3a5f;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(30, 58, 95, 0.15);
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold transition-all duration-300;
+    border: 2px solid rgba(255,255,255,0.3);
+    color: white;
+    background: transparent;
+  }
+  .btn-outline:hover {
+    border-color: white;
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-2px);
+  }
+  .card {
+    @apply bg-white rounded-2xl p-8 transition-all duration-300;
+    box-shadow: 0 4px 20px rgba(30, 58, 95, 0.06);
+  }
+  .card:hover {
+    box-shadow: 0 12px 40px rgba(30, 58, 95, 0.1);
+    transform: translateY(-4px);
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 40%, #2d8a4e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .section-title {
+    @apply text-4xl md:text-5xl font-heading font-bold mb-4;
+  }
+  .section-subtitle {
+    @apply text-lg md:text-xl text-neutral-500 max-w-3xl mx-auto;
+  }
+  .input-field {
+    @apply w-full px-5 py-3.5 rounded-xl border border-neutral-200 bg-white transition-all duration-200;
+    @apply focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none;
+  }
+  .input-field::placeholder {
+    @apply text-neutral-400;
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+}
+
+.ProseMirror h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: #1e293b; font-family: 'Poppins', system-ui, sans-serif; }
+.ProseMirror p { margin-bottom: 0.5rem; }
+.ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.5rem; }
+.ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.5rem; }
+.ProseMirror li { margin-bottom: 0.25rem; }
+.ProseMirror strong { font-weight: 700; }
+.ProseMirror em { font-style: italic; }
+.ProseMirror u { text-decoration: underline; }
+.ProseMirror code { background: #f1f5f9; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; color: #1e3a5f; }
+.ProseMirror a { color: #1e3a5f; text-decoration: underline; }
+.ProseMirror img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 0.5rem 0; }
+.ProseMirror p.is-editor-empty:first-child::before { color: #94a3b8; content: attr(data-placeholder); float: left; height: 0; pointer-events: none; }
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .dropdown-enter {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  .dropdown-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 150ms ease-out, transform 150ms ease-out;
+  }
+  .dropdown-exit {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .dropdown-exit-active {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 150ms ease-in, transform 150ms ease-in;
+  }
+}
+
+/* Admin dark theme */
+.admin-card {
+  @apply rounded-2xl border;
+  background: #13203a;
+  border-color: rgba(255,255,255,0.06);
+}
+.admin-card-light {
+  @apply rounded-2xl border;
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.06);
+}
+.admin-table {
+  @apply rounded-2xl border overflow-hidden;
+  background: #13203a;
+  border-color: rgba(255,255,255,0.06);
+}
+.admin-table th {
+  @apply text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider;
+  color: #ffffff;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.admin-table td {
+  @apply px-6 py-4;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+.admin-table tbody tr {
+  transition: background 0.2s;
+}
+.admin-table tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+.admin-input {
+  @apply w-full px-5 py-3.5 rounded-xl border transition-all duration-200 outline-none;
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
+  color: #ffffff;
+}
+.admin-input option {
+  background: #13203a;
+  color: #ffffff;
+  padding: 8px;
+}
+.admin-input:focus {
+  border-color: rgba(45, 90, 142, 0.5);
+  box-shadow: 0 0 0 3px rgba(45, 90, 142, 0.15);
+}
+.admin-input::placeholder {
+  color: rgba(255,255,255,0.55);
+}
+.admin-label {
+  @apply block text-sm font-medium mb-1.5;
+  color: #ffffff;
+}
+.admin-modal {
+  @apply rounded-2xl w-full max-h-[90vh] overflow-y-auto p-6;
+  background: #13203a;
+}
+.admin-badge {
+  @apply inline-flex px-2.5 py-1 rounded-full text-xs font-medium;
+}
+.admin-badge-published {
+  @apply admin-badge;
+  background: rgba(45, 138, 78, 0.15);
+  color: #4ade80;
+}
+.admin-badge-draft {
+  @apply admin-badge;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.85);
+}
+
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

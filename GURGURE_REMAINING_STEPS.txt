@@ -1,0 +1,25 @@
+GURGURE — Remaining Steps for Tomorrow
+======================================
+Priority: HIGH
+1. [ ] End-to-end test: Admin login → software CRUD → public pages with lang switching → navbar dropdowns
+2. [ ] Verify category filter in SoftwarePage dropdown works (click Business Systems → URL has ?cat=Business%20Systems → filtered results)
+3. [ ] Test all language switchers on new pages (fa/ps/en)
+
+Priority: MEDIUM
+4. [ ] Consider Services category restructure per concept doc (Strategy & Business | Brand & Creative | Digital & Technology | Communication | Hosting & Support)
+5. [ ] Update page_hero_data / cta_data settings if needed for new pages (currently inline heroes)
+6. [ ] Add any missing i18n keys that appear during testing
+
+Priority: LOW (Phase 2/3 - defer)
+7. [ ] Full Marketplace: transactions, RFQs, vendor onboarding, supplier directory
+8. [ ] Full Ventures: application pipeline, mentor/investor matching, program management
+9. [ ] Ecosystem integrations: cross-references between Solutions/Services/Software
+
+Reference Files:
+- GURGURE_PLATFORM_PHASE1_SUMMARY.txt (full implementation summary)
+- GURGURE_PRINT_PHASE1_REPORT.txt (print phase report from earlier)
+
+Commands to run tomorrow:
+- Backend: php artisan migrate --force (if needed), php artisan serve
+- Frontend: npm run dev (5173)
+- Typecheck: node .\node_modules\typescript\bin\tsc --noEmit
